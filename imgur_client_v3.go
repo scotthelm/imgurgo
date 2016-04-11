@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
@@ -11,17 +12,24 @@ import (
 )
 
 type ImgurClientV3 struct {
-	ClientId string
+	ClientId        string
+	AccessToken     string
+	ExpiresIn       int64
+	TokenType       string
+	RefreshToken    string
+	AccountUsername string
+	AccountId       int64
 	http.Client
 }
 
 const V3_API_BASE = "https://api.imgur.com/3"
 const V3_UPLOAD_IMAGE = V3_API_BASE + "/image"
+const V3_AUTH = "https://api.imgur.com/oauth2/authorize"
 
 func (cl ImgurClientV3) AnonymousUpload(path string) (ImgurResponseV3, error) {
 	var err error = nil
 	ir := ImgurResponseV3{}
-	auth_header := []string{"Client-ID " + os.Getenv("IMGUR_CLIENT_ID")}
+	auth_header := []string{"Client-ID " + cl.ClientId}
 	req, err := cl.newFileUploadRequest(
 		V3_UPLOAD_IMAGE,
 		nil,
@@ -41,6 +49,27 @@ func (cl ImgurClientV3) AnonymousUpload(path string) (ImgurResponseV3, error) {
 		return ir, err
 	}
 	return ir, err
+}
+
+func (cl *ImgurClientV3) GetAuthorizationToken() error {
+	params := map[string]string{
+		"client_id":     cl.ClientId,
+		"response_type": "token",
+	}
+	token_params := []string{}
+	for k, v := range params {
+		token_params = append(token_params, strings.Join([]string{k, v}, "="))
+	}
+	token_url_params := strings.Join(token_params, "&")
+	token_url := strings.Join([]string{V3_AUTH, token_url_params}, "?")
+	fmt.Println(token_url)
+	res, err := cl.Get(token_url)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	return err
 }
 
 // Creates a new file upload http request with optional extra params
