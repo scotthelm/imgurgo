@@ -8,7 +8,7 @@ import (
 
 func TestAnonymousUploadV3(t *testing.T) {
 	return
-	client := ImgurClientV3{ClientId: os.Getenv("IMGUR_CLIENT_ID")}
+	client := NewClient(os.Getenv("IMGUR_CLIENT_ID"), os.Getenv("IMGUR_CLIENT_SECRET"))
 	res, err := client.AnonymousUpload("./test_image.png")
 	if err != nil {
 		t.Errorf("TestUploadV3: ", err)
@@ -16,10 +16,22 @@ func TestAnonymousUploadV3(t *testing.T) {
 	fmt.Println(res)
 }
 
-func TestGetAuthorizationToken(t *testing.T) {
-	client := ImgurClientV3{ClientId: os.Getenv("IMGUR_CLIENT_ID")}
-	err := client.GetAuthorizationToken()
+func TestGetAuthorizationUrl(t *testing.T) {
+	client := NewClient(os.Getenv("IMGUR_CLIENT_ID"), os.Getenv("IMGUR_CLIENT_SECRET"))
+	url := client.GetAuthorizationUrl("pin")
+	expected := fmt.Sprintf("%s?client_id=%s&response_type=pin", V3_AUTH, client.ClientId)
+	fmt.Println(url)
+
+	if url != expected {
+		t.Error("TestUploadV3#GetAuthorization: unexpected url, got %s", url)
+	}
+}
+
+func TestAuthorize(t *testing.T) {
+	client := NewClient(os.Getenv("IMGUR_CLIENT_ID"), os.Getenv("IMGUR_CLIENT_SECRET"))
+	res, err := client.Authorize("df7b715c93", "pin")
+	fmt.Println(res)
 	if err != nil {
-		t.Errorf("TestUploadV3#GetAuthorization: ", err)
+		t.Errorf("TestAuthorize: %s", err)
 	}
 }
