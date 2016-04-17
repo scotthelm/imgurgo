@@ -1,6 +1,6 @@
-package main
+package v3
 
-type ImgurAuthResponseV3 struct {
+type ImgurAuthResponse struct {
 	AccessToken     string `json:"access_token"`
 	ExpiresIn       uint64 `json:"expires_in"`
 	Scope           string `json:"scope"`

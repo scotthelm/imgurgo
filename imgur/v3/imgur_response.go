@@ -1,6 +1,6 @@
-package main
+package v3
 
-type ImgurResponseV3 struct {
+type ImgurResponse struct {
 	Data    interface{} `json:"data"`
 	Success bool        `json:"success"`
 	Status  int         `json:"status"`

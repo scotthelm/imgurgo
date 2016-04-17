@@ -1,8 +1,9 @@
-package main
+package v3
 
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
@@ -12,7 +13,7 @@ import (
 	"strings"
 )
 
-type ImgurClientV3 struct {
+type ImgurClient struct {
 	ClientId        string
 	ClientSecret    string
 	AccessToken     string
@@ -24,21 +25,21 @@ type ImgurClientV3 struct {
 	http.Client
 }
 
-const V3_API_BASE = "https://api.imgur.com/3"
-const V3_UPLOAD_IMAGE = V3_API_BASE + "/image"
-const V3_AUTH = "https://api.imgur.com/oauth2/authorize"
-const V3_TOKEN = "https://api.imgur.com/oauth2/token"
+const API_BASE = "https://api.imgur.com/3"
+const UPLOAD_IMAGE = API_BASE + "/image"
+const AUTH = "https://api.imgur.com/oauth2/authorize"
+const TOKEN = "https://api.imgur.com/oauth2/token"
 
-func NewClient(key, secret string) *ImgurClientV3 {
-	return &ImgurClientV3{ClientId: key, ClientSecret: secret}
+func NewClient(key, secret string) *ImgurClient {
+	return &ImgurClient{ClientId: key, ClientSecret: secret}
 }
 
-func (cl ImgurClientV3) AnonymousUpload(path string) (ImgurResponseV3, error) {
+func (cl ImgurClient) AnonymousUpload(path string) (ImgurResponse, error) {
 	var err error = nil
-	ir := ImgurResponseV3{}
+	ir := ImgurResponse{}
 	auth_header := []string{"Client-ID " + cl.ClientId}
 	req, err := cl.newFileUploadRequest(
-		V3_UPLOAD_IMAGE,
+		UPLOAD_IMAGE,
 		nil,
 		"image",
 		"./test.png",
@@ -58,26 +59,30 @@ func (cl ImgurClientV3) AnonymousUpload(path string) (ImgurResponseV3, error) {
 	return ir, err
 }
 
-func (cl *ImgurClientV3) GetAuthorizationUrl(authType string) string {
-	return fmt.Sprintf("%s?client_id=%s&response_type=%s", V3_AUTH, cl.ClientId, authType)
+func (cl *ImgurClient) GetAuthorizationUrl(authType string) string {
+	return fmt.Sprintf("%s?client_id=%s&response_type=%s", AUTH, cl.ClientId, authType)
 }
 
-func (cl *ImgurClientV3) Authorize(pin, authType string) (ImgurAuthResponseV3, error) {
-	ir := ImgurAuthResponseV3{}
+func (cl *ImgurClient) Authorize(pin, authType string) (ImgurAuthResponse, error) {
+	ir := ImgurAuthResponse{}
 	v := url.Values{}
 	v.Set("client_id", cl.ClientId)
 	v.Set("client_secret", cl.ClientSecret)
 	v.Set("grant_type", authType)
 	v.Set("pin", pin)
-	response, err := cl.PostForm(V3_TOKEN, v)
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	err = json.Unmarshal(body, &ir)
+	response, err := cl.PostForm(TOKEN, v)
+	if response.StatusCode == 200 {
+		defer response.Body.Close()
+		body, _ := ioutil.ReadAll(response.Body)
+		err = json.Unmarshal(body, &ir)
+	} else {
+		err = errors.New(fmt.Sprintf("ImgurClient#Authorize: Status code: %d, authtype: %s", response.StatusCode, authType))
+	}
 	return ir, err
 }
 
 // Creates a new file upload http request with optional extra params
-func (cl *ImgurClientV3) newFileUploadRequest(
+func (cl *ImgurClient) newFileUploadRequest(
 	uri string,
 	params map[string]string,
 	fileParam,

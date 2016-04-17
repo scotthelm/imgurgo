@@ -1,4 +1,4 @@
-package main
+package v3
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestAnonymousUploadV3(t *testing.T) {
+func TestAnonymousUpload(t *testing.T) {
 	return
 	client := NewClient(os.Getenv("IMGUR_CLIENT_ID"), os.Getenv("IMGUR_CLIENT_SECRET"))
 	res, err := client.AnonymousUpload("./test_image.png")
@@ -19,7 +19,7 @@ func TestAnonymousUploadV3(t *testing.T) {
 func TestGetAuthorizationUrl(t *testing.T) {
 	client := NewClient(os.Getenv("IMGUR_CLIENT_ID"), os.Getenv("IMGUR_CLIENT_SECRET"))
 	url := client.GetAuthorizationUrl("pin")
-	expected := fmt.Sprintf("%s?client_id=%s&response_type=pin", V3_AUTH, client.ClientId)
+	expected := fmt.Sprintf("%s?client_id=%s&response_type=pin", AUTH, client.ClientId)
 	fmt.Println(url)
 
 	if url != expected {
