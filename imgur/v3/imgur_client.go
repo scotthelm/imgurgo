@@ -30,8 +30,13 @@ const UPLOAD_IMAGE = API_BASE + "/image"
 const AUTH = "https://api.imgur.com/oauth2/authorize"
 const TOKEN = "https://api.imgur.com/oauth2/token"
 
-func NewClient(key, secret string) *ImgurClient {
-	return &ImgurClient{ClientId: key, ClientSecret: secret}
+func NewClient(key, secret, accessToken, refreshToken string) *ImgurClient {
+	return &ImgurClient{
+		ClientId:     key,
+		ClientSecret: secret,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
 }
 
 func (cl ImgurClient) AnonymousUpload(path string) (ImgurResponse, error) {
@@ -79,6 +84,46 @@ func (cl *ImgurClient) Authorize(pin, authType string) (ImgurAuthResponse, error
 		err = errors.New(fmt.Sprintf("ImgurClient#Authorize: Status code: %d, authtype: %s", response.StatusCode, authType))
 	}
 	return ir, err
+}
+
+func (cl *ImgurClient) GetAccount(username string) map[string]interface{} {
+	request, _ := cl.prepareRequest("GET", "account/me")
+	response, err := cl.Do(request)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer response.Body.Close()
+	body, _ := ioutil.ReadAll(response.Body)
+	fmt.Println(string(body))
+	return map[string]interface{}{"this": "that"}
+}
+
+func (cl *ImgurClient) Refresh() error {
+	ir := ImgurAuthResponse{}
+	vals := url.Values{}
+	vals.Add("refresh_token", cl.RefreshToken)
+	vals.Add("client_id", cl.ClientId)
+	vals.Add("client_secret", cl.ClientSecret)
+	vals.Add("grant_type", "refresh_token")
+	response, err := cl.PostForm(TOKEN, vals)
+	if response.StatusCode == 200 {
+		defer response.Body.Close()
+		body, _ := ioutil.ReadAll(response.Body)
+		err = json.Unmarshal(body, &ir)
+		cl.AccessToken = ir.AccessToken
+		fmt.Printf("%v\n", ir)
+		fmt.Println(cl)
+	} else {
+		err = errors.New(fmt.Sprintf("ImgurClient#Authorize: Status code: %d, authtype: refresh_token", response.StatusCode))
+	}
+	return err
+}
+
+func (cl *ImgurClient) prepareRequest(method, uri string) (*http.Request, error) {
+	path := fmt.Sprintf("%s/%s", API_BASE, uri)
+	req, err := http.NewRequest(method, path, nil)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cl.AccessToken))
+	return req, err
 }
 
 // Creates a new file upload http request with optional extra params
