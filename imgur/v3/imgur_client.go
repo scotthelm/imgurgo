@@ -86,18 +86,6 @@ func (cl *ImgurClient) Authorize(pin, authType string) (ImgurAuthResponse, error
 	return ir, err
 }
 
-func (cl *ImgurClient) GetAccount(username string) map[string]interface{} {
-	request, _ := cl.prepareRequest("GET", "account/me")
-	response, err := cl.Do(request)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-	fmt.Println(string(body))
-	return map[string]interface{}{"this": "that"}
-}
-
 func (cl *ImgurClient) Refresh() error {
 	ir := ImgurAuthResponse{}
 	vals := url.Values{}

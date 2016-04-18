@@ -37,16 +37,6 @@ func TestAuthorizePin(t *testing.T) {
 	}
 }
 
-func TestAccount(t *testing.T) {
-	client := NewClient(
-		os.Getenv("IMGUR_CLIENT_ID"),
-		os.Getenv("IMGUR_CLIENT_SECRET"),
-		os.Getenv("IMGUR_ACCESS_TOKEN"),
-		os.Getenv("IMGUR_REFRESH_TOKEN"),
-	)
-	fmt.Println(client.GetAccount(os.Getenv("IMGUR_USERNAME")))
-}
-
 func TestRefresh(t *testing.T) {
 	return
 	client := NewClient(
@@ -56,4 +46,33 @@ func TestRefresh(t *testing.T) {
 		os.Getenv("IMGUR_REFRESH_TOKEN"),
 	)
 	client.Refresh()
+}
+
+func TestAccount(t *testing.T) {
+	client := client()
+	account, err := client.GetAccount(os.Getenv("IMGUR_USERNAME"))
+	if err != nil {
+		t.Errorf("TestAccount: %s\n", err)
+	}
+	fmt.Printf("%+v\n", account)
+}
+
+func TestImages(t *testing.T) {
+	client := client()
+	images, err := client.GetAccountImages(0)
+	if err != nil {
+		t.Errorf("TestImages: %s\n", err)
+	}
+	fmt.Printf("%+v\n", images)
+}
+
+func client() *ImgurClient {
+	client := NewClient(
+		os.Getenv("IMGUR_CLIENT_ID"),
+		os.Getenv("IMGUR_CLIENT_SECRET"),
+		os.Getenv("IMGUR_ACCESS_TOKEN"),
+		os.Getenv("IMGUR_REFRESH_TOKEN"),
+	)
+	client.AccountUsername = os.Getenv("IMGUR_USERNAME")
+	return client
 }
